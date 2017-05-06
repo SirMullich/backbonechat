@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Daulet's Chat</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="css/bootstrap.min.css" rel="stylesheet">
+    <!-- <link href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.0/css/bootstrap.min.css" rel="stylesheet"> -->
+    <link rel="stylesheet" href="css/style.css">
+    
+    <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.4.0/css/font-awesome.min.css" rel="stylesheet">
+    <link href="lib/css/emoji.css" rel="stylesheet">
+    <!-- <script src="http://code.jquery.com/jquery-1.11.1.min.js"></script> -->
+    <script src="vendor/jquery.js"></script>
+    <script src="lib/js/config.js"></script>
+    <script src="lib/js/util.js"></script>
+    <script src="lib/js/jquery.emojiarea.js"></script>
+    <script src="lib/js/emoji-picker.js"></script>
+  <!-- <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js" type="text/javascript"></script> -->
+
+    <script src="vendor/underscore.js"></script>
+    <!-- <script src="http://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.3.3/underscore-min.js" type="text/javascript"></script> -->
+
+    <script src="vendor/backbone.js"></script>
+    <!-- <script src="http://cdnjs.cloudflare.com/ajax/libs/backbone.js/0.9.2/backbone-min.js" type="text/javascript"></script> -->
+
+    <script src="vendor/backbone.localStorage.js"></script>
+    <!-- <script src="http://cdnjs.cloudflare.com/ajax/libs/backbone-localstorage.js/1.0/backbone.localStorage-min.js" type="text/javascript"></script>  -->
+
+    <script src="vendor/backbone.radio.js"></script>
+    <script src="vendor/backbone.marionette.min.js"></script>
+    <!-- <script src="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.0/js/bootstrap.min.js"></script> -->
+    <script src="vendor/bootstrap.min.js"></script>    
+
+
+
+
+    <!-- <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"> -->
+    <!-- <link rel="stylesheet" href="styles/style.css"> -->
+    <!-- Font Awesome File -->
+    <!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css"> -->
+    <!-- <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script> -->
+    <!-- <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script> -->
+
+    <script src="https://use.fontawesome.com/45e03a14ce.js"></script>
+</head>
+<!-- <body>
+<head>
+  <title>Whatsapp Template</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  
+</head> -->
+
+<body>
+
+<!-- <section id="todoapp">
+    <header id="header">
+      <h1>Todos</h1>
+      <input id="new-todo" placeholder="What needs to be done?" autofocus>
+      <div>
+        <a href="#/">show all</a> |
+        <a href="#/pending">show pending</a> |
+        <a href="#/completed">show completed</a>
+      </div>      
+    </header>
+    <section id="main">
+      <ul id="todo-list"></ul>
+    </section>
+  </section>  -->
+
+  <!-- Templates -->
+  <script type="text/template" id="item-template">
+    <div class="view">
+      <input class="toggle" type="checkbox" <%= completed ? 'checked' : '' %>>
+      <label><%- title %></label>
+      <input class="edit" value="<%- title %>">
+      <button class="destroy">remove</button>
+    </div>
+  </script>
+
+  <script type="x-template/underscore" id="message-template">
+      <span class="chat-img1 pull-left">
+        <img src="img/avatar.png" alt="User Avatar" class="img-circle">
+      </span>
+      <div class="chat-body1 clearfix">
+        <label><%- sender %></label>
+        <p><%- title %></p>
+        <input class="edit" value="<%- title %>">
+        <div class="chat_time pull-right"><%- time%></div>
+        <button class="destroy">remove</button>
+      </div>
+  </script>
+
+<script type="x-template/underscore" id="status-template">
+  <div class="pull-left">
+    <label id="client"><%- name%></label>
+    <input id="nameinput" value="<%- name %>">
+  </div>
+  <div class="pull-right">
+    <p id="clientstatus"><%- status%></p>
+    <input id="statusinput" value="<%- status %>">
+</div>
+
+</script>
+<!-- list-unstyled -->
+<!-- <ul class="messages-list"></ul> -->
+
+<!-- <a href="#" class="pull-left upload_btn"><i class="fa fa-cloud-upload" aria-hidden="true"></i>Add Files</a> -->
+<!-- <a><i class="fa fa-cloud-upload" aria-hidden="true"></i>Add Files</a> -->
+  <script type="x-template/underscore" id="chat-template">
+        <ul class="list-unstyled messages-list"></ul>
+        <div class="message_write">
+        <p class="lead emoji-picker-container">
+          <textarea class="form-control" placeholder="type a message" data-emojiable="true"></textarea>
+        </p>
+          <div class="clearfix"></div>
+          <div class="chat_bottom">
+
+            <img src="img/red.png" width="20" height="20" id="red"/>
+            <img src="img/blue.png" width="40" height="40" id="blue"/>
+            <img src="img/green.png" width="20" height="20" id="green"/>
+            <img src="img/black.png" width="20" height="20" id="black"/>
+            <span id="delete"> X </span>
+            
+          <button class="pull-right btn btn-success">Send</button></div>
+        </div>
+  </script>  
+
+<script type="x-template/underscore" id="conversation-template">
+  <span class="chat-img pull-left">
+    <img src="img/avatar.png" alt="User Avatar" class="img-circle">
+  </span>
+  <div class="chat-body clearfix">
+    <div class="header_sec">
+       <strong class="primary-font"><%- name%></strong> <strong class="pull-right"><%- time%></strong>
+    </div>
+    <div class="contact_sec">
+       <strong class="primary-font"><%- status%></strong>
+       <span class="delete-chat">x<span>
+    </div>
+  </div>
+</script>
+<!-- <span class="badge pull-right">3</span> -->
+<script type="x-template/underscore" id="sidebar-template">
+  <ul class="list-unstyled chat-list"></ul>
+</script>
+
+<div class="container" id="loginform">
+
+
+        <h2 class="form-signin-heading">Please sign in</h2>
+        <label for="inputEmail" class="sr-only">Username</label>
+        <input type="text" id="inputusername" class="form-control" placeholder="Username" required autofocus>
+        <label for="inputPassword" class="sr-only">Password</label>
+        <input type="text" id="inputstatus" class="form-control" placeholder="Status" required>
+        <br>
+        <button class="btn btn-lg btn-primary btn-block" id="signin">Sign in</button>
+
+
+</div> <!-- /container -->
+
+
+
+<div class="main_section">
+   <div class="container">
+      <div class="chat_container">
+         <div class="col-sm-3 chat_sidebar">
+       <div class="row">
+            <div id="custom-search-input">
+               <div class="input-group col-md-12">
+                  <input type="text" class="  search-query form-control" placeholder="Conversation" />
+                  <button class="btn btn-danger" type="button">
+                  <span class=" glyphicon glyphicon-search"></span>
+                  </button>
+               </div>
+            </div>
+            <div class="dropdown all_conversation">
+               <button class="dropdown-toggle" type="button" id="dropdownMenu2" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+               <i class="fa fa-weixin" aria-hidden="true"></i>
+               All Conversations
+               <span class="caret pull-right"></span>
+               </button>
+               <ul class="dropdown-menu" aria-labelledby="dropdownMenu2">
+                  <li><a href="#"> All Conversation </a>  <ul class="sub_menu_ list-unstyled">
+                  <li><a href="#"> All Conversation </a> </li>
+                  <li><a href="#">Another action</a></li>
+                  <li><a href="#">Something else here</a></li>
+                  <li><a href="#">Separated link</a></li>
+               </ul>
+         </li>
+                  <li><a href="#">Another action</a></li>
+                  <li><a href="#">Something else here</a></li>
+                  <li><a href="#">Separated link</a></li>
+               </ul>
+            </div>
+            <div class="member_list">
+               <!-- <ul class="list-unstyled">
+                  <li class="left clearfix">
+                     <span class="chat-img pull-left">
+                     <img src="img/avatar.png" alt="User Avatar" class="img-circle">
+                     </span>
+                     <div class="chat-body clearfix">
+                        <div class="header_sec">
+                           <strong class="primary-font">Jack Sparrow</strong> <strong class="pull-right">
+                           09:45AM</strong>
+                        </div>
+                        <div class="contact_sec">
+                           <strong class="primary-font">(123) 123-456</strong> <span class="badge pull-right">3</span>
+                        </div>
+                     </div>
+                  </li>
+                  <li class="left clearfix">
+                     <span class="chat-img pull-left">
+                     <img src="img/avatar.png" alt="User Avatar" class="img-circle">
+                     </span>
+                     <div class="chat-body clearfix">
+                        <div class="header_sec">
+                           <strong class="primary-font">Jack Sparrow</strong> <strong class="pull-right ">
+                           09:45AM</strong>
+                        </div>
+                        <div class="contact_sec">
+                           <strong class="primary-font">(123) 123-456</strong> <span class="badge pull-right">3</span>
+                        </div>
+                     </div>
+                  </li>
+                  <li class="left clearfix">
+                     <span class="chat-img pull-left">
+                     <img src="img/avatar.png" alt="User Avatar" class="img-circle">
+                     </span>
+                     <div class="chat-body clearfix">
+                        <div class="header_sec">
+                           <strong class="primary-font">Jack Sparrow</strong> <strong class="pull-right">
+                           09:45AM</strong>
+                        </div>
+                        <div class="contact_sec">
+                           <strong class="primary-font">(123) 123-456</strong> <span class="badge pull-right">3</span>
+                        </div>
+                     </div>
+                  </li>
+                          <li class="left clearfix">
+                     <span class="chat-img pull-left">
+                     <img src="img/avatar.png" alt="User Avatar" class="img-circle">
+                     </span>
+                     <div class="chat-body clearfix">
+                        <div class="header_sec">
+                           <strong class="primary-font">Jack Sparrow</strong> <strong class="pull-right">
+                           09:45AM</strong>
+                        </div>
+                        <div class="contact_sec">
+                           <strong class="primary-font">(123) 123-456</strong> <span class="badge pull-right">3</span>
+                        </div>
+                     </div>
+                  </li>
+                          <li class="left clearfix">
+                     <span class="chat-img pull-left">
+                     <img src="img/avatar.png" alt="User Avatar" class="img-circle">
+                     </span>
+                     <div class="chat-body clearfix">
+                        <div class="header_sec">
+                           <strong class="primary-font">Jack Sparrow</strong> <strong class="pull-right">
+                           09:45AM</strong>
+                        </div>
+                        <div class="contact_sec">
+                           <strong class="primary-font">(123) 123-456</strong> <span class="badge pull-right">3</span>
+                        </div>
+                     </div>
+                  </li>
+                          <li class="left clearfix">
+                     <span class="chat-img pull-left">
+                     <img src="img/avatar.png" alt="User Avatar" class="img-circle">
+                     </span>
+                     <div class="chat-body clearfix">
+                        <div class="header_sec">
+                           <strong class="primary-font">Jack Sparrow</strong> <strong class="pull-right">
+                           09:45AM</strong>
+                        </div>
+                        <div class="contact_sec">
+                           <strong class="primary-font">(123) 123-456</strong> <span class="badge pull-right">3</span>
+                        </div>
+                     </div>
+                  </li>
+                          <li class="left clearfix">
+                     <span class="chat-img pull-left">
+                     <img src="img/avatar.png" alt="User Avatar" class="img-circle">
+                     </span>
+                     <div class="chat-body clearfix">
+                        <div class="header_sec">
+                           <strong class="primary-font">Jack Sparrow</strong> <strong class="pull-right">
+                           09:45AM</strong>
+                        </div>
+                        <div class="contact_sec">
+                           <strong class="primary-font">(123) 123-456</strong> <span class="badge pull-right">3</span>
+                        </div>
+                     </div>
+                  </li>
+               </ul> -->
+            </div>
+          </div>
+         </div>
+         <!--chat_sidebar-->
+     
+     
+    <div class="col-sm-9 message_section">
+     <div class="row">
+     <div class="new_message_head">
+
+     </div><!--new_message_head-->
+     <div class="chat_area" id="mainchat-area">
+
+     <!-- <ul class="list-unstyled" id="messages-list"> -->
+     <!-- <li class="left clearfix">
+                     <span class="chat-img1 pull-left">
+                     <img src="img/avatar.png" alt="User Avatar" class="img-circle">
+                     </span>
+                     <div class="chat-body1 clearfix">
+                        <p>Contrary to popular belief, Lorem Ipsum is not simply random text. It has roots in a piece of classical Latin literature from 45 BC, making it over 2000 years old. Richard McClintock, a Latin professor at Hampden-Sydney College in Virginia.</p>
+            <div class="chat_time pull-right">09:40PM</div>
+                     </div>
+                  </li>
+           <li class="left clearfix">
+                     <span class="chat-img1 pull-left">
+                     <img src="img/avatar.png" alt="User Avatar" class="img-circle">
+                     </span>
+                     <div class="chat-body1 clearfix">
+                        <p>Contrary to popular belief, Lorem Ipsum is not simply random text. It has roots in a piece of classical Latin literature from 45 BC, making it over 2000 years old. Richard McClintock, a Latin professor at Hampden-Sydney College in Virginia.</p>
+            <div class="chat_time pull-right">09:40PM</div>
+                     </div>
+                  </li>
+                     <li class="left clearfix">
+                     <span class="chat-img1 pull-left">
+                     <img src="img/avatar.png" alt="User Avatar" class="img-circle">
+                     </span>
+                     <div class="chat-body1 clearfix">
+                        <p>Contrary to popular belief, Lorem Ipsum is not simply random text. It has roots in a piece of classical Latin literature from 45 BC, making it over 2000 years old. Richard McClintock, a Latin professor at Hampden-Sydney College in Virginia.</p>
+              <div class="chat_time pull-right">09:40PM</div>
+                     </div>
+                  </li>
+          <li class="left clearfix admin_chat">
+                     <span class="chat-img1 pull-right">
+                     <img src="img/avatar.png" alt="User Avatar" class="img-circle">
+                     </span>
+                     <div class="chat-body1 clearfix">
+                        <p>Contrary to popular belief, Lorem Ipsum is not simply random text. It has roots in a piece of classical Latin literature from 45 BC, making it over 2000 years old. Richard McClintock, a Latin professor at Hampden-Sydney College in Virginia.</p>
+            <div class="chat_time pull-left">09:40PM</div>
+                     </div>
+                  </li>
+                  <li class="left clearfix admin_chat">
+                     <span class="chat-img1 pull-right">
+                     <img src="img/avatar.png" alt="User Avatar" class="img-circle">
+                     </span>
+                     <div class="chat-body1 clearfix">
+                        <p>Contrary to popular belief, Lorem Ipsum is not simply random text. It has roots in a piece of classical Latin literature from 45 BC, making it over 2000 years old. Richard McClintock, a Latin professor at Hampden-Sydney College in Virginia.</p>
+              <div class="chat_time pull-left">09:40PM</div>
+                     </div>
+                  </li> -->
+          
+        
+     
+     
+   <!--   </ul> -->
+  <!--chat_area-->  </div> 
+     <!-- <div class="message_write">
+       <textarea class="form-control" placeholder="type a message"></textarea>
+     <div class="clearfix"></div>
+
+     <div class="chat_bottom"><a href="#" class="pull-left upload_btn">
+       <i class="fa fa-cloud-upload" aria-hidden="true"></i>Add Files</a>
+       <button class="pull-right btn btn-success">Send</button></div>
+     </div>  -->
+     </div>
+         </div> 
+        <!-- message_section -->
+      </div>
+   </div>
+</div>
+<!-- <div id="username"></div> -->
+<!-- <div class="username">
+        <input type="text" class="inputText">
+        <button class="changeStatus">Change Status</button>
+</div>
+<br>
+<div class="add-user">
+        <input type="text" class="user-name">
+        <button class="submitNewUser">Add User</button>
+</div> -->
+
+
+<script src="js/models.js"></script>
+<script src="js/views.js"></script>
+<script src="js/app.js"></script>
+
+
+
+</body>
+</html>

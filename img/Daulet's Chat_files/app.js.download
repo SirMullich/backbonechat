@@ -1,0 +1,428 @@
+
+'use strict';
+var app = {}; // create namespace for our app
+
+var user = 'Test User';
+window.user = 'test1';
+
+window.receiver = 'receiving user';
+
+
+//--------------
+// Models
+//--------------
+app.Todo = Backbone.Model.extend({
+  defaults: {
+    title: '',
+    completed: false, 
+    edited: false, 
+    deleted: false,
+    sender: ''
+  },
+  toggle: function(){
+    this.save({ completed: !this.get('completed')});
+  },
+  // initialize: function() {
+  //   this.time = (new Date()).toTimeString();
+  //   console.log(this.time);
+  // }
+});
+
+app.User = Backbone.Model.extend({
+  defaults: {
+    name: ''
+  }
+});
+
+//--------------
+// Collections
+//--------------
+app.TodoList = Backbone.Collection.extend({
+  model: app.Todo,
+  localStorage: new Store('backbone-chat'),
+  // localStorage: function() {
+  //   var storageName = window.user < window.receiver ? window.user + ' ' + window.receiver : window.receiver + ' ' + window.user;
+  //   return new Store(storageName);
+  // }, 
+  getSender: function() {
+    return this.filter(function( todo ) {
+      return todo.get('sender');
+    });
+  },
+  getReceiver: function() {
+    return this.filter(function( todo ) {
+      return todo.get('receiver');
+    });
+  },
+  // remaining: function() {
+  //   return this.without.apply( this, this.completed() );
+  // }      
+});
+
+// instance of the Collection
+app.todoList = new app.TodoList();
+
+
+
+app.UserList = Backbone.Collection.extend({
+  model: app.User, 
+  localStorage: new Store('backbone-users')
+});
+
+app.userList = new app.UserList();
+
+//--------------
+// Views
+//--------------
+
+// renders individual todo items list (li)
+app.TodoView = Marionette.View.extend({
+  template: '#message-template',
+  tagName: 'li',
+  //model: todo,
+  // template: _.template($('#item-template').html()),
+
+
+  // render: function(){
+  //   // this.$el.html(this.template(this.model.toJSON()));
+  //   this.input = this.$('.edit');
+  //   return this; // enable chained calls
+  // },
+
+  onRender: function(){
+    // manipulate the `el` here. it's already
+    // been rendered, and is full of the view's
+    // HTML, ready to go.
+    this.input = this.$('.edit');
+    if (this.model.get('edited')) {
+      this.$el.find('p').addClass('edited');
+      console.log('in render of TodoView');
+      //console.log(this.$el);
+    }
+
+    if (this.model.get('deleted')) {
+      this.$el.find('p').addClass('deleted');
+    }
+  },
+
+  ui: {
+    paragraph: 'p',
+  },
+
+
+  initialize: function(){
+    
+    this.$el.addClass('left');
+    this.$el.addClass('clearfix');
+    this.model.on('change', this.render, this);
+    this.model.on('destroy', this.remove, this); // remove: Convenience Backbone's function for removing the view from the DOM.
+  },
+  events: {
+    'dblclick p' : 'edit',
+    'keypress .edit' : 'updateOnEnter',
+    'blur .edit' : 'close',
+    'click .toggle': 'toggleCompleted',
+    'click .destroy': 'destroy'
+  },
+  edit: function(){
+    this.$el.addClass('editing');
+    this.input.css('display', 'inline');
+    this.input.focus();
+    console.log('double click edit');
+  },
+  close: function(){
+    console.log('in CLOSE');
+    var value = this.input.val().trim();
+
+    // SAVE changed value
+    if(value) {
+      this.model.save({title: value});
+    }
+    this.$el.removeClass('editing');
+    this.model.save({edited: true});
+    //reapply();
+  },
+  updateOnEnter: function(e){
+    if(e.which == 13){
+      this.close();
+    }
+  },
+  toggleCompleted: function(){
+    this.model.toggle();
+  },
+  destroy: function(){
+    this.model.save({title: 'Message deleted.'});
+    this.model.save({deleted: true});
+    // this.model.destroy();
+  }      
+});
+
+
+app.ConversationView = Marionette.View.extend({
+  template: '#conversation-template',
+  tagName: 'li',
+  //model: todo,
+  // template: _.template($('#item-template').html()),
+
+
+  // render: function(){
+  //   // this.$el.html(this.template(this.model.toJSON()));
+  //   this.input = this.$('.edit');
+  //   return this; // enable chained calls
+  // },
+
+  onRender: function(){
+  },
+
+  ui: {
+    paragraph: 'p',
+  },
+
+
+  initialize: function(){
+    this.$el.addClass('left');
+    this.$el.addClass('clearfix');
+    this.model.on('change', this.render, this);
+    this.model.on('destroy', this.remove, this); // remove: Convenience Backbone's function for removing the view from the DOM.
+  },
+  events: {
+    'click .primary-font': 'loadChat',
+    //'click .destroy': 'destroy'
+  },
+
+  loadChat: function(){
+    window.receiver = this.model.get('name');
+    app.appView = new app.AppView();
+    app.appView.render();
+
+  }
+  // ,
+  // destroy: function(){
+  //   this.model.save({title: 'Message deleted.'});
+  //   this.model.save({deleted: true});
+  //   // this.model.destroy();
+  // }      
+});
+
+var chat = Marionette.CollectionView.extend({
+    tagName: 'div',
+    childView: app.TodoView
+  });
+
+var cons = Marionette.CollectionView.extend({
+  tagName: 'div', 
+  childView: app.ConversationView
+});
+
+// renders the full list of todo items calling TodoView for each one.
+app.AppView = Marionette.View.extend({
+  el: '.chat_area',
+  template: '#chat-template',
+
+  regions: {
+      messages: '.messages-list'
+    },
+
+  ui: {
+    input: 'textarea',
+    submit: 'button',
+    list: 'ul'
+  },
+
+  initialize: function () {
+    app.todoList.on('add', this.addAll, this);
+    app.todoList.on('reset', this.addAll, this);
+    app.todoList.fetch(); // Loads list from local storage
+  },
+  events: {
+    'keypress #new-todo': 'createTodoOnEnter', 
+    'click @ui.submit': function(){
+        // var text = window.user + ': ';
+        var text = this.ui.input.val().trim();
+
+        console.log(text);
+        this.getChildView('messages')
+          .collection
+          .create({
+            title: text, 
+            completed: false,
+            edited: false, 
+            deleted: false, 
+            time: (new Date()).toTimeString().split(' ')[0], 
+            sender: window.user, 
+            receiver: window.receiver
+          });
+        // REAPPLY CSS
+        //reapply();
+        this.ui.input.val('');
+      }
+  },
+
+  // createTodoOnEnter: function(e){
+  //   if ( e.which !== 13 || !this.input.val().trim() ) { // ENTER_KEY = 13
+  //     return;
+  //   }
+  //   app.todoList.create(this.newAttributes());
+  //   this.input.val(''); // clean input box
+  // },
+
+
+  addOne: function(todo){
+    var view = new app.TodoView({model: todo});
+    this.ui.list.append(view.render().el);
+  },
+
+  addAll: function(){
+    this.ui.list.html(''); // clean the todo list
+    //this.$el.html(''); // clean the todo list
+    console.log('addAll was called');
+    // filter todo item list
+
+    app.todoList.each(function(todo) {
+       var view = new app.TodoView({ model: todo });
+       // console.log(todo);
+       console.log('sender = ' + todo.get('sender'));
+      console.log(window.user);
+      //
+       if ((todo.get('sender') === window.user && todo.get('receiver') === window.receiver) || (todo.get('sender') === window.receiver && todo.get('receiver') === window.user)) {
+          console.log('in stupid if...');
+          this.ui.list.append(view.render().el);
+       }
+       
+    }, this)
+
+    // switch(window.filter){
+    //   case 'pending':
+    //     _.each(app.todoList.remaining(), this.addOne);
+    //     break;
+    //   case 'completed':
+    //     _.each(app.todoList.completed(), this.addOne);
+    //     break;            
+    //   default:
+    //     app.todoList.each(this.addOne, this);
+    //     break;
+    // }
+  },
+  onRender: function(){
+      console.log('appView onRender');
+      this.showChildView('messages', new chat({
+        collection: app.todoList
+      }));
+      this.addAll();
+    },
+
+  newAttributes: function(){
+    return {
+      title: '', 
+      completed: false,
+      edited: false, 
+      deleted: false, 
+      time: (new Date()).toTimeString().split(' ')[0], 
+      sender: window.user, 
+      receiver: window.receiver
+    }
+  }
+});
+
+// renders sidebar
+app.SidebarView = Marionette.View.extend({
+  el: '.member_list',
+  template: '#sidebar-template', 
+
+  regions: {
+    conversations: '.chat-list'
+  },
+
+  ui: {
+    list: 'ul'
+  }, 
+
+  initialize: function () {
+    // app.todoList.on('add', this.addAllCons, this);
+    // app.todoList.on('reset', this.addAllCons, this);
+    app.userList.fetch(); // Loads list from local storage
+  },
+
+  events: {
+
+  }, 
+
+  // addAllCons: function() {
+  //   this.ui.list.html(''); // clean the todo list
+  //   //this.$el.html(''); // clean the todo list
+  //   console.log('addAllCons was called');
+  //   // filter todo item list
+
+  //   app.todoList.each(function(todo) {
+  //      var view = new app.ConversationView({ model: todo });
+  //      // console.log(todo);
+  //      console.log('sender = ' + todo.sender);
+  //       console.log(window.user);
+  //      if (()) {
+  //         console.log('In If adding conversation');
+  //         this.ui.list.append(view.render().el);
+  //      }
+       
+  //   }, this)
+  // },
+  populate: function(userName) {
+    window.user = userName;
+    this.getChildView('conversations')
+          .collection
+          .create({
+            name: userName
+          });
+  },
+
+  onRender: function(){
+      console.log('conversationView onRender');
+      app.userList.fetch();
+      this.showChildView('conversations', new cons({
+        collection: app.userList
+      }));
+      // this.addAllCons();
+    },
+
+});
+//--------------
+// Routers
+//--------------
+
+app.Router = Backbone.Router.extend({
+  routes: {
+    '*filter' : 'setFilter'
+  },
+  setFilter: function(params) {
+    params = params || '';
+    console.log('app.router.params = ' + params);
+    window.filter = params.trim() || '';
+    app.todoList.trigger('reset');
+  }
+});     
+//--------------
+// Initializers
+//--------------   
+
+
+
+
+
+app.router = new app.Router();
+Backbone.history.start();    
+app.appView = new app.AppView();
+app.conView = new app.SidebarView();
+app.conView.render();
+app.appView.render();
+
+
+// var Name = prompt('Please enter your name');
+// window.user = Name;
+// app.userList.create({
+//   name: Name
+// });
+var run = function() {
+  // while(app.userList.contains(Name)) {
+  //   Name = prompt('Please enter your name');
+  // }
+  //app.userList.create
+}
